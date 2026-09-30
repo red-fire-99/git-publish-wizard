@@ -1,0 +1,11 @@
+# 生成物与本地文件
+*.log
+*.err
+*.pid
+logs/
+node/
+out/
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
