@@ -18,6 +18,7 @@ param(
   [string]$Email,         # 预填: 提交邮箱
   [string]$DisplayName,   # 预填: 提交昵称
   [string]$Visibility = 'public',
+  [string]$Description = '',    # 预填: 仓库简介（留空则不设置）
   [string]$RepoDir        # 预填: 要发布的 git 仓库目录（默认=本脚本所在目录）
 )
 
@@ -78,7 +79,7 @@ function Detect-GhUser {
 # ---------- 本地自检: 推到临时裸仓库, 证明 git 链路正常 ----------
 if ($SelfTest) {
   Write-Host '=== 自检: 用本地临时仓库验证 git 链路（不联网） ==='
-  $tmp = Join-Path $env:TEMP ("cline-zh-selftest-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+  $tmp = Join-Path $env:TEMP ("git-publish-wizard-selftest-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
   $bare = Join-Path $tmp 'remote.git'
   try {
@@ -128,7 +129,7 @@ Write-Host ''
 Write-Host '=== 第 2 步 / 提交身份 ===' -ForegroundColor Cyan
 $curName = Invoke-Git @('config', 'user.name') -AllowFail | Select-Object -First 1
 $curMail = Invoke-Git @('config', 'user.email') -AllowFail | Select-Object -First 1
-$isPlaceholder = (-not $curName) -or ($curName -eq 'cline-desktop-zh')
+$isPlaceholder = (-not $curName) -or (@('your-name', 'username', 'your name') -contains $curName)
 Write-Host ("当前身份: {0} <{1}>" -f ($(if ($curName) { $curName } else { '(未设置)' })), ($(if ($curMail) { $curMail } else { '(未设置)' })))
 # 预填了邮箱就自动设置身份，并把历史提交作者统一成该身份（未推送前可安全改写）
 $presetIdentity = $false
@@ -168,8 +169,9 @@ Write-Host '=== 第 3 步 / 仓库信息 ===' -ForegroundColor Cyan
 $detected = Detect-GhUser
 $ghUser = if ($User) { $User } elseif ($detected) { Write-Host ('已自动识别 GitHub 用户名: ' + $detected); $detected } else { Ask '你的 GitHub 用户名（例如 octocat）' '' }
 if (-not $ghUser) { Write-Host '缺少用户名，已取消。' -ForegroundColor Red; exit 1 }
-$repoName = if ($RepoName) { $RepoName } else { Ask '仓库名' 'cline-desktop-zh' }
-$desc = 'Cline 桌面版（Windows）中文界面工具：运行时注入词典翻译，不修改官方文件，自动更新不受影响'
+$defaultRepoName = Split-Path -Leaf $repo
+$repoName = if ($RepoName) { $RepoName } else { Ask '仓库名' $defaultRepoName }
+$desc = if ($Description) { $Description } else { '' }
 $isPrivate = ($Visibility -match 'private|私有|priv')
 Write-Host ('  用户名: ' + $ghUser + '   仓库名: ' + $repoName + '   可见性: ' + $(if ($isPrivate) { '私有' } else { '公开' }))
 $repoUrl = "https://github.com/$ghUser/$repoName"
@@ -205,7 +207,7 @@ if ($ans -match '^[aA]') {
   $body = @{ name = $repoName; description = $desc; private = $isPrivate; auto_init = $false } | ConvertTo-Json
   try {
     $r = Invoke-RestMethod -Uri 'https://api.github.com/user/repos' -Method Post -ContentType 'application/json' `
-      -Headers @{ 'User-Agent' = 'cline-desktop-zh-publish'; 'Authorization' = "Bearer $token" } -Body $body
+      -Headers @{ 'User-Agent' = 'git-publish-wizard'; 'Authorization' = "Bearer $token" } -Body $body
     Write-Host ('已创建: ' + $r.html_url) -ForegroundColor Green
   } catch {
     if ($_.Exception.Message -match 'already exists|422') {
@@ -262,7 +264,7 @@ Write-Host '✔ 发布成功！' -ForegroundColor Green
 Write-Host ('  仓库地址: ' + $repoUrl)
 Write-Host ''
 Write-Host '建议顺手做的三件事：'
-Write-Host '  1) 仓库 About 里填简介，勾选 Topics: cline chinese localization i18n zh-cn windows webview2 cdp'
+Write-Host '  1) 仓库 About 里填简介，并勾选与项目相关的 Topics（如 windows / powershell / git / github）'
 Write-Host '  2) 把 README 里的项目名/描述按你的仓库地址微调一下'
 Write-Host '  3) 以后有更新就重复运行 launcher\publish-github.cmd'
 Write-Host ''

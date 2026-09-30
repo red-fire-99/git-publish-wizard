@@ -35,7 +35,7 @@ if (!/^[\w.-]+\/[\w.-]+$/.test(repoSpec)) { console.error('请用 --repo 所有�
 const [owner, repo] = repoSpec.split('/');
 const API = `https://api.github.com/repos/${owner}/${repo}`;
 const HEADERS = {
-  'User-Agent': 'cline-desktop-zh-publish',
+  'User-Agent': 'git-publish-wizard',
   'Authorization': `Bearer ${TOKEN}`,
   'Accept': 'application/vnd.github+json',
   'X-GitHub-Api-Version': '2022-11-28',

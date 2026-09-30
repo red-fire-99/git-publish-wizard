@@ -87,7 +87,7 @@ Write-Host 'Note 随便填，Expiration 选 30 days，勾选 repo，Generate tok
 $sec = Read-Host '粘贴 Token（输入不可见，直接粘贴后回车）' -AsSecureString
 $token = [System.Net.NetworkCredential]::new('', $sec).Password
 if (-not $token) { Write-Host '未提供 Token，已取消。' -ForegroundColor Red; exit 1 }
-$headers = @{ 'User-Agent' = 'cline-desktop-zh-publish'; 'Authorization' = "Bearer $token"; 'Accept' = 'application/vnd.github+json' }
+$headers = @{ 'User-Agent' = 'git-publish-wizard'; 'Authorization' = "Bearer $token"; 'Accept' = 'application/vnd.github+json' }
 $api = "https://api.github.com/repos/$User/$Repo"
 
 Write-Host ''
