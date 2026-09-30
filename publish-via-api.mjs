@@ -19,8 +19,9 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = (() => {
-  const i = argv.indexOf('--repo-dir');
-  const p = i >= 0 && argv[i + 1] ? argv[i + 1] : process.cwd();
+  const a = process.argv.slice(2);
+  const i = a.indexOf('--repo-dir');
+  const p = i >= 0 && a[i + 1] ? a[i + 1] : process.cwd();
   return resolve(p);
 })();
 const argv = process.argv.slice(2);
